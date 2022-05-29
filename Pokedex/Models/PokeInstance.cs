@@ -249,6 +249,17 @@ namespace Pokedex.Models
 
             return description.ToString();
         }
+
+        /// <summary>
+        /// Display the Pokemon's name, HP and moves
+        /// </summary>
+        public void ShowPokeFightStat()
+        {
+            Console.WriteLine($"{this.Pokemon.Name}, {this.Hp}/{this.CalcHp()} HP\n");
+            for (int i = 0; this._moves[i] is not null; i++)
+                Console.WriteLine($"{i + 1}) {this._moves[i]}\n");
+        }
+
         #endregion
     }
 }

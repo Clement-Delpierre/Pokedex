@@ -3,8 +3,9 @@
     internal class Trainer
     {
         #region Variables
-        private String _name;
+        private string _name;
         private List<PokeInstance> _pokemons;
+        private PokeInstance? _activePokemon;
         #endregion
 
         #region Getters + Setters
@@ -45,6 +46,16 @@
         {
             get { return this._pokemons; }
         }
+
+        /// <summary>
+        /// Trainer's active Pokemon
+        /// </summary>
+        public PokeInstance? ActivePokemon
+        {
+            get { return this._activePokemon; }
+            set { this._activePokemon = value; }
+        }
+
         #endregion
 
         #region Constructors
@@ -60,6 +71,7 @@
 
             // Init pokemon list
             this._pokemons = new List<PokeInstance>();
+            this._activePokemon = null;
         }
         #endregion
 
@@ -81,32 +93,166 @@
             return false;
         }
 
-        public void ShowAllPokemons()
+        /// <summary>
+        /// Display all Trainer's Pokemons's information
+        /// </summary>
+        public void ShowTeamInformation()
         {
             foreach (PokeInstance p in this._pokemons)
             {
-                Console.WriteLine($"{p.ToString()}\n");
+                Console.WriteLine($"{p}\n");
                 for (int i = 0; p.Moves[i] is not null; i++)
-                { Console.WriteLine($"{i}) {p.Moves[i]}\n"); }
+                    Console.WriteLine($"{i}) {p.Moves[i]}\n");
             }
         }
 
-        public void ShowPokeFightStat(PokeInstance pokemon)
+        /// <summary>
+        /// Display the Pokemon list of the player
+        /// </summary>
+        public void ShowPokeList()
         {
-            Console.WriteLine($"{pokemon.Pokemon.Name}, {pokemon.Hp}/{pokemon.CalcHp()} HP\n");
-            for (int i = 0; pokemon.Moves[i] is not null; i++)
-            { Console.WriteLine($"{i + 1}) {pokemon.Moves[i]}\n"); }
-        }
-
-        public void ShowPokeList(Trainer player)
-        {
-            for (int i = 0; i < player.Pokemons.Count; i++)
+            for (int i = 0; i < this.Pokemons.Count; i++)
             {
-                Console.WriteLine($"\t{i + 1}/ {player.Pokemons[i].Pokemon.Name}, ");
-                Console.Write($"{player.Pokemons[i].Hp}/{player.Pokemons[i].CalcHp()} HP");
+                Console.Write($"\t{i + 1}/ {this.Pokemons[i].Pokemon.Name}, ");
+                Console.WriteLine($"{this.Pokemons[i].Hp}/{this.Pokemons[i].CalcHp()} HP");
             }
         }
 
+        /// <summary>
+        /// Send the first Pokemon
+        /// </summary>
+        public void StartFight()
+        {
+            this._activePokemon = this._pokemons[0];
+        }
+
+        /// <summary>
+        /// Perform the trainer's turn
+        /// </summary>
+        /// <param name="combat"></param>
+        /// <param name="opponent"></param>
+        public void PlayerTurn(Trainer opponent)
+        {
+            // turn begin
+            bool stop = false;
+            Console.WriteLine($"It's {this.Name}'s turn!\n");
+            
+            do // continue while Trainer didn't play
+            {
+                Fight.DisplayMenu();
+
+                // user choice between 1 and 5
+                int choice;
+                Console.Write("Your choice: ");
+                while (int.TryParse(Console.ReadLine(), out choice) is false
+                    || choice is < 1 or > 5)
+                    Console.WriteLine("Invalid input");
+                Console.WriteLine();
+
+                // Process the user input
+                switch (choice)
+                {
+                    case 1: // display the active Pokemon
+                        this._activePokemon!.ShowPokeFightStat(); break;
+                    case 2: // display the Pokemons of the active player
+                        this.ShowTeamInformation(); break;
+                    case 3: // see opponent's information
+                        Console.WriteLine($"The opponent {opponent.Name} has {opponent.Pokemons.Count()} pokemons.");
+                        Console.Write($"The active pokemon of the opponent is {opponent.ActivePokemon!.Pokemon.Name}");
+                        Console.Write($" and it has {opponent.ActivePokemon!.Hp * 100 / (double)opponent.ActivePokemon!.CalcHp():F2}%");
+                        Console.WriteLine($" HP.\n");
+                        break;
+                    case 4: // Pokemon change
+                        stop = (PokemonChange() != null ); break;
+                    case 5: // trainer's Pokemon use a move
+                        stop = (SelectMove() != null); break;
+                }
+            } while (stop == false);
+        }
+
+        /// <summary>
+        /// Perform the active Pokemon change
+        /// </summary>
+        /// <returns>True if okay, overwise false</returns>
+        public PokeInstance? PokemonChange()
+        {
+            bool isOkay = ConfirmChange();
+
+            // if false, back to the menu
+            if (!isOkay)
+                return null;
+
+            // else performs the pokemon change
+
+            Console.WriteLine("Which Pokemon do you choose?");
+
+            // show the pokemon list (name + HP)
+            this.ShowPokeList();
+
+            // user choice between 1 and the last pokemon
+            int pokemonChoice = 0;
+            while (int.TryParse(Console.ReadLine(), out pokemonChoice) is false
+                || pokemonChoice > this.Pokemons.Count
+                || pokemonChoice < 1)
+                Console.WriteLine("Invalid input");
+            Console.WriteLine();
+
+            // pokemon change if the pokemon chosen is not the active pokemon, send an error message else
+            if (this._activePokemon != this.Pokemons[pokemonChoice - 1])
+                return this.Pokemons[pokemonChoice - 1];
+            Console.WriteLine("You must chose another Pokemon!\n");
+            return null;
+        }
+
+        /// <summary>
+        /// User input to confirm the active Pokemon change
+        /// </summary>
+        /// <returns>True if okay, overwise false</returns>
+        static public bool ConfirmChange()
+        {
+            Console.WriteLine("Are you sure to want to change pokemon? [y/n]");
+            Console.Write("Your choice : ");
+
+            // user choice between 'y' or 'n'
+            char isOkay;
+            while (char.TryParse(Console.ReadLine(), out isOkay) is false
+                || isOkay is not 'y' and not 'n')
+                Console.WriteLine("Invalid input");
+            Console.WriteLine();
+
+            return isOkay == 'y';
+        }
+
+        /// <summary>
+        /// User input to chose a Pokemon's move
+        /// </summary>
+        /// <returns>Return the move selected or null if exit</returns>
+        public PokeMove? SelectMove()
+        {
+            Console.WriteLine("Which move do you choose?");
+
+            // show the move list
+            int nbMoves = 0;
+            for (int i = 0; this._activePokemon!.Moves[i] is not null; nbMoves++, i++)
+            {
+                Console.Write($"\t{i + 1}/ {this._activePokemon.Moves[i]!.NameFr}");
+                Console.WriteLine($" ({this._activePokemon.Moves[i]!.NameEn})");
+            }
+            Console.WriteLine("\t0/ Exit\n");
+
+            // user choice between 0 and the last move (0 for exit and back to the menu)
+            int moveChoice;
+            while (int.TryParse(Console.ReadLine(), out moveChoice) is false
+                || moveChoice < 0
+                || moveChoice > nbMoves)
+                Console.WriteLine("Invalid input");
+            Console.WriteLine();
+
+            // record the selected move or exit
+            if (moveChoice != 0)
+                return this._activePokemon.Moves[moveChoice - 1];
+            return null;
+        }
         #endregion
     }
 }
