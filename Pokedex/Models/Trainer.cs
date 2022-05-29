@@ -101,8 +101,10 @@
         public void ShowPokeList(Trainer player)
         {
             for (int i = 0; i < player.Pokemons.Count; i++)
-                Console.WriteLine($"\t{i + 1}/ {player.Pokemons[i].Pokemon.Name}, " +
-                    $"{player.Pokemons[i].Hp}/{player.Pokemons[i].CalcHp()} HP");
+            {
+                Console.WriteLine($"\t{i + 1}/ {player.Pokemons[i].Pokemon.Name}, ");
+                Console.Write($"{player.Pokemons[i].Hp}/{player.Pokemons[i].CalcHp()} HP");
+            }
         }
 
         #endregion

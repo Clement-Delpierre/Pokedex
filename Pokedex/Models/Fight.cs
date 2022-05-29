@@ -159,10 +159,10 @@ namespace Pokedex.Models
                 case 2:
                     this._activePlayer.ShowAllPokemons(); break; // display the pokemons of the active player
                 case 3:
-                    Console.WriteLine($"The opponent {this._opponent.Name} has {this._opponent.Pokemons.Count()} pokemons.\n" +
-                                    $"The active pokemon of the opponent is {this._onGroundPokemonB.Pokemon.Name} " +
-                                    $"and it has {this._onGroundPokemonB.Hp * 100 / (double)this._onGroundPokemonB.CalcHp():F2}%" +
-                                    $" hp.\n"); break; // see opponent's information
+                    Console.WriteLine($"The opponent {this._opponent.Name} has {this._opponent.Pokemons.Count()} pokemons.");
+                    Console.Write($"The active pokemon of the opponent is {this._onGroundPokemonB.Pokemon.Name}");
+                    Console.Write($"and it has {this._onGroundPokemonB.Hp * 100 / (double)this._onGroundPokemonB.CalcHp():F2}%");
+                    Console.WriteLine($" hp."); break; // see opponent's information
                 case 4:
                     PokemonChange(); break; // pokemon change
                 case 5:
@@ -170,7 +170,7 @@ namespace Pokedex.Models
             }
             // appel à la méthode de precision : HasTouch ou autres
             // appel à calcDamage
-            // effectuer les changements // appliquer dommages et effetd
+            // effectuer les changements // appliquer dommages et effet
 
             this._weather.OnTurnEnd(this);
         }
@@ -196,11 +196,11 @@ namespace Pokedex.Models
         public void DisplayMenu()
         {
             Console.WriteLine("What do you want to do :");
-            Console.WriteLine("1/ See your active pokemon\n" +
-                                "2/ See information on your pokemons\n" +
-                                "3/ See the opponent\n" +
-                                "4/ Change pokemon\n" +
-                                "5/ Use a move\n");
+            Console.WriteLine("1/ See your active pokemon");
+            Console.WriteLine("2/ See information on your pokemons");
+            Console.WriteLine("3/ See the opponent");
+            Console.WriteLine("4/ Change pokemon");
+            Console.WriteLine("5/ Use a move");
         }
 
         // performs the pokemon change
@@ -257,8 +257,10 @@ namespace Pokedex.Models
             // show the move list
             int nbMoves = 0;
             for (int i = 0; this._onGroundPokemonA.Moves[i] is not null; nbMoves++, i++)
-                Console.WriteLine($"\t{i + 1}/ {this._onGroundPokemonA.Moves[i]!.NameFr}" +
-                    $" ({this._onGroundPokemonA.Moves[i]!.NameEn})");
+            {
+                Console.WriteLine($"\t{i + 1}/ {this._onGroundPokemonA.Moves[i]!.NameFr}");
+                Console.WriteLine($"{this._onGroundPokemonA.Moves[i]!.NameEn})");
+            }
             Console.WriteLine("\t0/ Exit\n");
 
             // user choice between 0 and the last move (0 for exit and back to the menu)
