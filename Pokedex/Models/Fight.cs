@@ -150,27 +150,10 @@ namespace Pokedex.Models
 
             // Seek the faster Pokemon
             if (_playerA.ActivePokemon!.Pokemon.StatSpeed > _playerB.ActivePokemon!.Pokemon.StatSpeed)
-            {
-                // Apply the dammage if not pokemon change
-                if (!IsPokemonChange(_playerA))
-                    ApplyDamage(_playerA, _playerB);
-                // Verify if the PokemonB is Alive
-                if (!IsDead(_playerB) && !IsPokemonChange(_playerB))
-                    ApplyDamage(_playerB, _playerA);
-                // Verify if the PokemonB is Alive
-                IsDead(_playerA);
-            }
+                OrderExecuteFight(_playerA, _playerB);
             else
-            {
-                // Apply the dammage if not pokemon change
-                if (!IsPokemonChange(_playerB))
-                    ApplyDamage(_playerB, _playerA);
-                // Verify if the PokemonA is Alive
-                if (!IsDead(_playerA) && !IsPokemonChange(_playerA))
-                    ApplyDamage(_playerA, _playerB);
-                // Verify if the PokemonA is Alive
-                IsDead(_playerB);
-            }
+                OrderExecuteFight(_playerB, _playerA);
+
             // this._weather.OnTurnEnd(this);
         }
 
@@ -240,6 +223,23 @@ namespace Pokedex.Models
             trainer.Action = trainer.PokemonChange();
             trainer.Action!.Apply();
             return true;
+        }
+    
+        /// <summary>
+        /// Execute the fight in the order (depending to their speed)
+        /// </summary>
+        /// <param name="faster"></param>
+        /// <param name="other"></param>
+        public void OrderExecuteFight(Trainer faster, Trainer other)
+        {
+            // Apply the dammage if pokemon didn't change
+            if (!IsPokemonChange(faster))
+                ApplyDamage(faster, other);
+            // Verify if the other's Pokemon is Alive
+            if (!IsDead(other) && !IsPokemonChange(other))
+                ApplyDamage(other, faster);
+            // Verify if the faster's Pokemon is Alive
+            IsDead(faster);
         }
     }
 }
