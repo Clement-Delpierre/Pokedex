@@ -70,7 +70,7 @@ namespace Pokedex
 			Trainer winner = octogon.DoCombat();
 
 			// Annouce the winner
-            Console.WriteLine("The winner is {}!", winner.Name);
+            Console.WriteLine($"The winner is {winner.Name}!");
         }
     }
 }

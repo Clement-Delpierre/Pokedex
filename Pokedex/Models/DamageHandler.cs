@@ -24,8 +24,8 @@ namespace Pokedex.Models
 		(
 			PokeInstance attacker,
 			PokeInstance defender,
-			PokeMove move,
-			Weather weather
+			PokeMove move
+			//Weather weather
 		)
         {
             // Initial damage
@@ -51,7 +51,7 @@ namespace Pokedex.Models
             /* value?.member -> access member if and only if value != null */
 
 			// Apply the weather
-			damage = weather.OnDamageGive(damage, move.Type);
+			//damage = weather.OnDamageGive(damage, move.Type);
 
             // Floor the result
             return (int)(damage);

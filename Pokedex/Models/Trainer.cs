@@ -1,4 +1,6 @@
-﻿namespace Pokedex.Models
+﻿using Pokedex.Models.Events;
+
+namespace Pokedex.Models
 {
     internal class Trainer
     {
@@ -6,6 +8,7 @@
         private string _name;
         private List<PokeInstance> _pokemons;
         private PokeInstance? _activePokemon;
+        private Event? _action;
         #endregion
 
         #region Getters + Setters
@@ -56,6 +59,12 @@
             set { this._activePokemon = value; }
         }
 
+        public Event? Action
+        {
+            get { return this._action; }
+            set { this._action = value; }
+        }
+
         #endregion
 
         #region Constructors
@@ -72,6 +81,7 @@
             // Init pokemon list
             this._pokemons = new List<PokeInstance>();
             this._activePokemon = null;
+            this._action = null;
         }
         #endregion
 
@@ -129,8 +139,8 @@
         /// <summary>
         /// Perform the trainer's turn
         /// </summary>
-        /// <param name="combat"></param>
         /// <param name="opponent"></param>
+        /// <returns>The event which contain the Trainer's action</returns>
         public void PlayerTurn(Trainer opponent)
         {
             // turn begin
@@ -140,7 +150,7 @@
             do // continue while Trainer didn't play
             {
                 Fight.DisplayMenu();
-
+                
                 // user choice between 1 and 5
                 int choice;
                 Console.Write("Your choice: ");
@@ -157,49 +167,61 @@
                     case 2: // display the Pokemons of the active player
                         this.ShowTeamInformation(); break;
                     case 3: // see opponent's information
-                        Console.WriteLine($"The opponent {opponent.Name} has {opponent.Pokemons.Count()} pokemons.");
+                        Console.WriteLine($"The opponent {opponent.Name} has {opponent.Pokemons.Count} pokemons.");
                         Console.Write($"The active pokemon of the opponent is {opponent.ActivePokemon!.Pokemon.Name}");
                         Console.Write($" and it has {opponent.ActivePokemon!.Hp * 100 / (double)opponent.ActivePokemon!.CalcHp():F2}%");
                         Console.WriteLine($" HP.\n");
                         break;
                     case 4: // Pokemon change
-                        stop = (PokemonChange() != null ); break;
+                        stop = (Action = PokemonChange()) != null; break;
                     case 5: // trainer's Pokemon use a move
-                        stop = (SelectMove() != null); break;
+                        stop = (Action = SelectMove()) != null; break;
                 }
             } while (stop == false);
         }
 
         /// <summary>
-        /// Perform the active Pokemon change
+        /// Select the active Pokemon change
         /// </summary>
-        /// <returns>True if okay, overwise false</returns>
-        public PokeInstance? PokemonChange()
+        /// <returns>The event which contain the Trainer's action</returns>
+        public EventChangePokemon? PokemonChange()
         {
-            bool isOkay = ConfirmChange();
+            bool isOkay = true;
 
-            // if false, back to the menu
-            if (!isOkay)
-                return null;
-
-            // else performs the pokemon change
+            // confirm change only if the active pokemon is alive
+            if (!this._activePokemon!.IsKo)
+            {
+                isOkay = ConfirmChange();
+                // if false, back to the menu
+                if (!isOkay)
+                    return null;
+            }
 
             Console.WriteLine("Which Pokemon do you choose?");
 
-            // show the pokemon list (name + HP)
+            // show the Pokemon list (name + HP)
             this.ShowPokeList();
 
-            // user choice between 1 and the last pokemon
-            int pokemonChoice = 0;
-            while (int.TryParse(Console.ReadLine(), out pokemonChoice) is false
-                || pokemonChoice > this.Pokemons.Count
-                || pokemonChoice < 1)
-                Console.WriteLine("Invalid input");
-            Console.WriteLine();
+            // user choice between 1 and the last Pokemon, the pokemon have to be alive
+            int pokemonChoice;
+            do
+            {
+                while (int.TryParse(Console.ReadLine(), out pokemonChoice) is false
+                    || pokemonChoice > this.Pokemons.Count
+                    || pokemonChoice < 1)
+                    Console.WriteLine("Invalid input");
+                if (this._pokemons[pokemonChoice - 1]!.IsKo)
+                    Console.WriteLine("Chose a Pokemon alive!");
+                Console.WriteLine();
+            } while (this._pokemons[pokemonChoice - 1]!.IsKo);
+            
 
-            // pokemon change if the pokemon chosen is not the active pokemon, send an error message else
-            if (this._activePokemon != this.Pokemons[pokemonChoice - 1])
-                return this.Pokemons[pokemonChoice - 1];
+            // return the event if the pokemon chosen is neither the active pokemon nor KO, send an error message else
+            if (this._activePokemon != this._pokemons[pokemonChoice - 1]
+                && !this._pokemons[pokemonChoice - 1].IsKo)
+            {
+                return new EventChangePokemon(this, pokemonChoice - 1);
+            }
             Console.WriteLine("You must chose another Pokemon!\n");
             return null;
         }
@@ -226,8 +248,8 @@
         /// <summary>
         /// User input to chose a Pokemon's move
         /// </summary>
-        /// <returns>Return the move selected or null if exit</returns>
-        public PokeMove? SelectMove()
+        /// <returns>The event which contain the Trainer's action</returns>
+        public EventMove? SelectMove()
         {
             Console.WriteLine("Which move do you choose?");
 
@@ -250,7 +272,7 @@
 
             // record the selected move or exit
             if (moveChoice != 0)
-                return this._activePokemon.Moves[moveChoice - 1];
+                return new EventMove(this._activePokemon, this._activePokemon.Moves[moveChoice - 1]!);
             return null;
         }
         #endregion

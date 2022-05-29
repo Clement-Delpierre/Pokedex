@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
+using Pokedex.Models.Events;
 using Pokedex.Models.Weathers;
 
 namespace Pokedex.Models
@@ -99,7 +100,6 @@ namespace Pokedex.Models
                 this.DoTurn();
                 
                 turn++;
-                Console.WriteLine($"tour {turn}");
             }
 
             return this._playerA.CanFight
@@ -123,8 +123,9 @@ namespace Pokedex.Models
 		/// <see cref="Fight.Weather"/>
         private void DoTurn()
         {
-			this._weather.OnTurnStart(this);
+			// this._weather.OnTurnStart(this);
 
+            #region Task
             // Code to implement for project
             // To calc damage, use DamageHandler.CalcDamage(attacker, defender, move, this._weather);
             // To apply damage, use pokemonInstance.TakeDamage(damage)
@@ -136,22 +137,41 @@ namespace Pokedex.Models
 
             // Change the weather:
             // this.Weather = newWeather.Instance;
+            #endregion
 
             this._playerA.PlayerTurn(_playerB);
             this._playerB.PlayerTurn(_playerA);
 
-            // résolution !
+            // Pokemon Change First
+            if (IsPokemonChange(_playerA))
+                this._playerA.Action!.Apply();
+            if (IsPokemonChange(_playerB))
+                this._playerB.Action!.Apply();
 
-            // appel à la méthode de precision : HasTouch ou autres
-            // appel à calcDamage
-            // effectuer les changements // appliquer dommages et effet
-
-            /*
-             * this._activePokemon = this.Pokemons[pokemonChoice - 1];
-                Console.WriteLine($"Let's go {this._activePokemon.Pokemon.Name}!\n");
-             */
-
-            this._weather.OnTurnEnd(this);
+            // Seek the faster Pokemon
+            if (_playerA.ActivePokemon!.Pokemon.StatSpeed > _playerB.ActivePokemon!.Pokemon.StatSpeed)
+            {
+                // Apply the dammage if not pokemon change
+                if (!IsPokemonChange(_playerA))
+                    ApplyDamage(_playerA, _playerB);
+                // Verify if the PokemonB is Alive
+                if (!IsDead(_playerB) && !IsPokemonChange(_playerB))
+                    ApplyDamage(_playerB, _playerA);
+                // Verify if the PokemonB is Alive
+                IsDead(_playerA);
+            }
+            else
+            {
+                // Apply the dammage if not pokemon change
+                if (!IsPokemonChange(_playerB))
+                    ApplyDamage(_playerB, _playerA);
+                // Verify if the PokemonA is Alive
+                if (!IsDead(_playerA) && !IsPokemonChange(_playerA))
+                    ApplyDamage(_playerA, _playerB);
+                // Verify if the PokemonA is Alive
+                IsDead(_playerB);
+            }
+            // this._weather.OnTurnEnd(this);
         }
 
         /// <summary>
@@ -168,6 +188,58 @@ namespace Pokedex.Models
             Console.WriteLine();
         }
 
+        /// <summary>
+        /// Verify if the Trainer performed a Pokemon change
+        /// </summary>
+        /// <param name="trainer"></param>
+        /// <returns></returns>
+        public bool IsPokemonChange(Trainer trainer)
+        {
+            return trainer.Action!.GetType() == typeof(EventChangePokemon);
+        }
         #endregion
+
+        /// <summary>
+        /// Apply the moves effects and display them
+        /// </summary>
+        /// <param name="trainer"></param>
+        /// <param name="opponent"></param>
+        public void ApplyDamage(Trainer trainer, Trainer opponent)
+        {
+            // Calc damage
+            int damage = DamageHandler.CalcDamage(trainer.ActivePokemon!, opponent.ActivePokemon!,
+                                                (trainer.Action as EventMove)!.MoveUsed);
+
+            // Change Target's HP
+            opponent.ActivePokemon!.TakeDamage(damage);
+
+            // Display the fight
+            trainer.Action.Apply();
+            Console.Write($"{trainer.ActivePokemon!.Nickname} inflict {damage} ");
+            Console.WriteLine($"damages at {opponent.ActivePokemon!.Nickname}");
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Verify if the Trainer's Pokemon is dead and Pokemon change if true
+        /// </summary>
+        /// <returns>True if dead, false overwise</returns>
+        public bool IsDead(Trainer trainer)
+        {
+            if (!trainer.ActivePokemon!.IsKo)
+                return false;
+            Console.WriteLine($"Oh, {trainer.ActivePokemon!.Nickname} is dead! You must Pokemon change.");
+            Console.WriteLine();
+
+            // Verify that the Trainer has has still a Pokemon alive
+            if(!trainer.CanFight)
+            {
+                Console.WriteLine("Oh no, all Pokemons are KO!");
+                return true;
+            }
+            trainer.Action = trainer.PokemonChange();
+            trainer.Action!.Apply();
+            return true;
+        }
     }
 }
